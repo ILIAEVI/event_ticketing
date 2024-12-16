@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'django_filters',
     'drf_yasg',
     'authentication',
+    'event',
 ]
 
 MIDDLEWARE = [
