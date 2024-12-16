@@ -1,0 +1,22 @@
+services:
+  postgres_db:
+    container_name: event_ticketing_db
+    image: postgres:17.2-bullseye
+    volumes:
+      - postgres_data:/var/lib/postgresql/database
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    restart: always
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test:
+        [ "CMD", "pg_isready", "-q", "-d", "event_ticketing_db", "-U", "admin" ]
+      timeout: 60s
+      interval: 10s
+      retries: 10
+
+volumes:
+  postgres_data:
