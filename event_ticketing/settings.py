@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'django_filters',
     'drf_yasg',
+    'authentication',
 ]
 
 MIDDLEWARE = [
@@ -99,6 +100,9 @@ DATABASES = {
         "PORT": env('DB_PORT'),
     }
 }
+
+# Custom User Model
+AUTH_USER_MODEL = "authentication.User"
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
