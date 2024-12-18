@@ -1,4 +1,5 @@
 from django.db.models import Sum
+from django.utils.timezone import now
 from rest_framework import serializers
 
 from event.models import Event, Category, TicketBatch, Booking
@@ -62,10 +63,35 @@ class TicketBatchSerializer(serializers.ModelSerializer):
 
 class BookingSerializer(serializers.ModelSerializer):
     event = serializers.PrimaryKeyRelatedField(queryset=Event.objects.all())
+
     class Meta:
         model = Booking
-        fields = ['id', 'user', 'event', 'ticket_batch', 'ticket_count', 'payment_status', 'confirmed_at', 'cancelled_at', 'reference_code']
-        read_only_fields = ['user', 'confirmed_at', 'cancelled_at', 'reference_code']
+        fields = ['id', 'user', 'event', 'ticket_batch', 'ticket_count', 'payment_status', 'confirmed_at',
+                  'cancelled_at', 'reference_code']
+        read_only_fields = ['user', 'payment_status', 'confirmed_at', 'cancelled_at', 'reference_code']
+
+    def validate(self, attrs):
+        event = attrs['event']
+        ticket_batch = attrs['ticket_batch']
+        if ticket_batch.event != event:
+            raise serializers.ValidationError("Ticket batch does not belong to the event.")
+        if ticket_batch.tickets_sold >= ticket_batch.number_of_tickets:
+            raise serializers.ValidationError("Ticket batch is sold out.")
+        return attrs
+
+    def create(self, validated_data):
+        validated_data['payment_status'] = Booking.BookingStatusChoices.CONFIRMED
+        validated_data['confirmed_at'] = now()
+
+        return super().create(validated_data)
 
 
+class QrCodeSerializer(serializers.ModelSerializer):
+    qr_code_string = serializers.SerializerMethodField()
 
+    class Meta:
+        model = Booking
+        fields = ['qr_code_string']
+
+    def get_qr_code_string(self, obj):
+        return obj.generate_qr_string()
