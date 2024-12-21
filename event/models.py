@@ -1,6 +1,8 @@
 import uuid
 from django.db import models
 from django.db.models import F
+from rest_framework.exceptions import ValidationError
+
 from authentication.models import User
 
 

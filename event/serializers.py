@@ -62,21 +62,17 @@ class TicketBatchSerializer(serializers.ModelSerializer):
 
 
 class BookingSerializer(serializers.ModelSerializer):
-    event = serializers.PrimaryKeyRelatedField(queryset=Event.objects.all())
-
     class Meta:
         model = Booking
         fields = ['id', 'user', 'event', 'ticket_batch', 'ticket_count', 'payment_status', 'confirmed_at',
                   'cancelled_at', 'reference_code']
-        read_only_fields = ['user', 'payment_status', 'confirmed_at', 'cancelled_at', 'reference_code']
+        read_only_fields = ['user', 'event', 'payment_status', 'confirmed_at', 'cancelled_at', 'reference_code']
 
     def validate(self, attrs):
-        event = attrs['event']
+        event = self.context['event']
         ticket_batch = attrs['ticket_batch']
         if ticket_batch.event != event:
             raise serializers.ValidationError("Ticket batch does not belong to the event.")
-        if ticket_batch.tickets_sold >= ticket_batch.number_of_tickets:
-            raise serializers.ValidationError("Ticket batch is sold out.")
         return attrs
 
     def create(self, validated_data):
