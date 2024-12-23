@@ -5,7 +5,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.core.cache import cache
 from authentication.models import User
-from event.utils import generate_token, expire_page
+from event.utils import generate_token, expire_page, expire_view_cache
 
 
 class Category(models.Model):
@@ -110,6 +110,5 @@ class BookingToken(models.Model):
 @receiver(post_save, sender=Event)
 @receiver(post_delete, sender=Event)
 def clear_event_cache(sender, instance, **kwargs):
-    # Clear cache for both list and retrieve actions
-    expire_page('/event/')
-    expire_page(f'/event/{instance.id}/')
+
+    expire_view_cache('event-list')
