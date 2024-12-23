@@ -3,6 +3,8 @@ from rest_framework import viewsets, mixins, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.conf import settings
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from contact.filters import ContactListOrderingBackend
 from contact.models import ContactInfo, SocialMedia
 from contact.serializers import ContactInfoSerializer, SendEmailSerializer, SocialMediaSerializer, \
@@ -66,3 +68,17 @@ class SocialMediaViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return SocialMediaDisplaySerializer
         return SocialMediaSerializer
+
+    @method_decorator(cache_page(60 * 5))
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Cache the retrieve action
+        """
+        return super().retrieve(request, *args, **kwargs)
+
+    @method_decorator(cache_page(60 * 5))
+    def list(self, request, *args, **kwargs):
+        """
+        Cache the list action
+        """
+        return super().list(request, *args, **kwargs)
