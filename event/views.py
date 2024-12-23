@@ -1,5 +1,7 @@
 from django.db import transaction
 from django.db.models import F
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -9,8 +11,7 @@ from event.permissions import IsHostOrReadOnly, IsBookingOwner
 from event.queue_service import QueueService
 from event.serializers import EventSerializer, CategorySerializer, TicketBatchSerializer, BookingSerializer, \
     QrCodeSerializer
-from event.models import Event, Category, TicketBatch, Booking
-from event.utils import generate_booking_token, validate_booking_token
+from event.models import Event, Category, TicketBatch, Booking, BookingToken
 
 
 class CategoryViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin):
@@ -26,22 +27,58 @@ class EventViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(host=self.request.user)
 
+    @method_decorator(cache_page(60 * 5))
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Cache the retrieve action for event details
+        """
+        return super().retrieve(request, *args, **kwargs)
+
+    @method_decorator(cache_page(60 * 5))
+    def list(self, request, *args, **kwargs):
+        """
+        Cache the list action for all events
+        """
+        return super().list(request, *args, **kwargs)
+
+    @action(
+        detail=True,
+        methods=['get'],
+        url_path='start_booking',
+        url_name='start_booking'
+    )
+    def start_booking(self, request, pk=None):
+        user = self.request.user
+        event = self.get_object()
+
+        if event.event_queue.is_active:
+            if BookingToken.objects.filter(user=user, event=event.event_queue).first().is_valid():
+                return Response({"message": "You are allowed to continue booking"}, status=status.HTTP_200_OK)
+            queue_service = QueueService(event=event)
+            if queue_service.add_to_queue(str(user.id)):
+                return Response({"message": "You have been added to the waiting room"}, status=status.HTTP_201_CREATED)
+            return Response({"message": "You are already in the queue"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "The EventQueue is not active, You are allowed to continue booking"},
+                        status=status.HTTP_200_OK)
+
     @action(
         detail=True,
         methods=['post'],
         serializer_class=BookingSerializer,
         url_path='booking',
         url_name='booking',
-        # permission_classes=[permissions.IsAuthenticated]
+        permission_classes=[permissions.IsAuthenticated]
     )
     def booking(self, request, pk=None):
         event = self.get_object()
         user = self.request.user
-        queue_token = request.headers.get('queue_token')
-        if not queue_token:
-            raise PermissionDenied("Queue Token is required")
-
-        validate_booking_token(queue_token, event=event, user=user)
+        if event.event_queue.is_active:
+            queue_token = BookingToken.objects.filter(user=user, event=event.event_queue).first()
+            if not queue_token:
+                raise PermissionDenied("Queue Token is required to continue booking.")
+            if not queue_token.is_valid():
+                print("Queue Token is expired.")
+                raise PermissionDenied("Queue Token is expired.")
 
         serializer = self.get_serializer(data=request.data, context={'event': event, 'user': user})
         serializer.is_valid(raise_exception=True)
@@ -74,15 +111,19 @@ class EventViewSet(viewsets.ModelViewSet):
         user = self.request.user
         event = self.get_object()
         queue_service = QueueService(event=event)
-        if queue_service.add_to_queue(str(user.id)):
-            return Response({"message": "You have been added to the queue."}, status=status.HTTP_200_OK)
         position = queue_service.get_user_position(str(user.id))
-        if position == 1:
-            queue_service.process_queue()
-            token = generate_booking_token(user, event)
-            return Response({"queue_token": token}, status=status.HTTP_200_OK)
+        allowed_users = queue_service.get_allowed_users()
+
+        if str(user.id) in allowed_users:
+            booking_token = BookingToken.objects.get(user=user, event=event.event_queue).token
+            return Response(
+                {"message": "You are allowed to start the booking",
+                 "booking_token": booking_token},
+                status=status.HTTP_200_OK,
+            )
+
         return Response(
-            {"message": "You are currently in the queue.", "position": position},
+            {"message": "Your are in the queue", "position": position},
             status=status.HTTP_200_OK,
         )
 

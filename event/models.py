@@ -1,9 +1,12 @@
+import secrets
 import uuid
 from django.db import models
-from django.db.models import F
-from rest_framework.exceptions import ValidationError
-
+from django.utils import timezone
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+from django.core.cache import cache
 from authentication.models import User
+from event.utils import generate_token, expire_page
 
 
 class Category(models.Model):
@@ -72,3 +75,42 @@ class Feedback(models.Model):
     rating = models.PositiveSmallIntegerField()  # 1 to 5
     comment = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class EventQueue(models.Model):
+    event = models.OneToOneField(Event, on_delete=models.CASCADE, related_name='event_queue')
+    is_active = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.event} Event Queue"
+
+    def save(self, *args, **kwargs):
+        """
+            At this development stage, only one EventQueue can be active at a time.
+            If the current EventQueue is being set as active, all others are deactivated.
+        """
+        if self.is_active:
+            EventQueue.objects.filter(is_active=True).update(is_active=False)
+
+        super().save(*args, **kwargs)
+
+
+class BookingToken(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='booking_tokens')
+    event = models.ForeignKey(EventQueue, on_delete=models.CASCADE, related_name='booking_tokens')
+    token = models.CharField(max_length=255, default=generate_token, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_valid(self):
+        return (timezone.now() - self.created_at).total_seconds() < 600
+
+    def __str__(self):
+        return f"{self.token}"
+
+
+@receiver(post_save, sender=Event)
+@receiver(post_delete, sender=Event)
+def clear_event_cache(sender, instance, **kwargs):
+    # Clear cache for both list and retrieve actions
+    expire_page('/api/event/')
+    expire_page(f'/api/event/{instance.id}/')
