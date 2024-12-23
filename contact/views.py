@@ -4,8 +4,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.conf import settings
 from contact.filters import ContactListOrderingBackend
-from contact.models import ContactInfo
-from contact.serializers import ContactInfoSerializer, SendEmailSerializer
+from contact.models import ContactInfo, SocialMedia
+from contact.serializers import ContactInfoSerializer, SendEmailSerializer, SocialMediaSerializer, \
+    SocialMediaDisplaySerializer
 
 
 class ContactUsViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
@@ -54,3 +55,14 @@ class ContactInfoViewSet(viewsets.ModelViewSet):
                 {"error": f"Failed to send email: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class SocialMediaViewSet(viewsets.ModelViewSet):
+    queryset = SocialMedia.objects.all()
+    serializer_class = SocialMediaSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, permissions.IsAdminUser]
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']:
+            return SocialMediaDisplaySerializer
+        return SocialMediaSerializer
