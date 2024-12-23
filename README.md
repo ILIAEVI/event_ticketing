@@ -1,4 +1,4 @@
-# Django API with Authentication, Event Management, and Contact Features
+# Django API with Authentication, Event Management & Booking, Queue System and Contact Features
 
 This project is a Django-based web application providing various features, including user authentication, event
 management with booking and queue, and contact management with email answering functionalities for admins.
@@ -54,6 +54,10 @@ access to the booking system.
   implemented custom ordering for phone_numbers.
 - **Social Links**: Provides links to the organization's social media profiles.
 
+### Caching
+
+To enhance performance and reduce redundant database queries, we utilize Redis for caching:
+
 ## Installation
 
 ### Setup
@@ -79,7 +83,13 @@ access to the booking system.
     python manage.py createsuperuser
     ```
 
-5. Run the server:
+5. Run Celery:
+    ```bash
+      celery -A event_ticketing worker --loglevel=info
+      celery -A event_ticketing beat --loglevel=info
+    ```
+
+6. Run the server:
     ```bash
     python manage.py runserver
     ```
