@@ -31,7 +31,7 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # for debug toolbar
 INTERNAL_IPS = [
@@ -189,7 +189,6 @@ EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 REDIS_HOST = env("REDIS_HOST")
 REDIS_PORT = env("REDIS_PORT")
 
-
 CACHES = {
     'default': {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -207,6 +206,13 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 DJANGO_CELERY_BEAT_TZ_AWARE = False
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+CELERY_BEAT_SCHEDULE = {
+    "process_event_queue": {
+        "task": "event.tasks.process_event_queue",
+        "schedule": 600.0,
+    }
+}
 
 TESTING = "test" in sys.argv
 

@@ -7,10 +7,10 @@ from debug_toolbar.toolbar import debug_toolbar_urls
 
 urlpatterns = [
     path('api/', include('event.urls')),
-    path('api/contact/', include('contact.urls')),
+    path('api/', include('contact.urls')),
     path('api/auth/', include('authentication.urls')),
     path('admin/', admin.site.urls),
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path('api/swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 ]
 
 if settings.DEBUG:
@@ -23,5 +23,5 @@ urlpatterns += [
 
 if not settings.TESTING:
     urlpatterns = [
-                      *urlpatterns,
-                  ] + debug_toolbar_urls()
+        *urlpatterns,
+    ] + debug_toolbar_urls()

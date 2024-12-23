@@ -112,5 +112,5 @@ class BookingToken(models.Model):
 @receiver(post_delete, sender=Event)
 def clear_event_cache(sender, instance, **kwargs):
     # Clear cache for both list and retrieve actions
-    expire_page('/api/event/')
-    expire_page(f'/api/event/{instance.id}/')
+    expire_page('/event/')
+    expire_page(f'/event/{instance.id}/')

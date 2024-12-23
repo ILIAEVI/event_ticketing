@@ -30,10 +30,9 @@ class SocialMedia(models.Model):
     url = models.URLField()
     icon = models.ImageField(upload_to=generate_image_path, null=True, blank=True)
 
-
 # @receiver(post_save, sender=SocialMedia)
 # @receiver(post_delete, sender=SocialMedia)
 # def clear_event_cache(sender, instance, **kwargs):
 #     # Clear cache for both list and retrieve actions
-#     cache.delete(f'social_links-list')
-#     cache.delete(f'social_links-details-{instance.id}')
+#     cache.delete(f'social_media-list')
+#     cache.delete(f'social_media-details-{instance.id}')

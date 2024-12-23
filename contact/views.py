@@ -60,7 +60,7 @@ class ContactInfoViewSet(viewsets.ModelViewSet):
 
 
 class SocialMediaViewSet(viewsets.ModelViewSet):
-    queryset = SocialMedia.objects.all()
+    queryset = SocialMedia.objects.all().order_by('-id')
     serializer_class = SocialMediaSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, permissions.IsAdminUser]
 

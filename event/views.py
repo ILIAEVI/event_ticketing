@@ -45,9 +45,14 @@ class EventViewSet(viewsets.ModelViewSet):
         detail=True,
         methods=['get'],
         url_path='start_booking',
-        url_name='start_booking'
+        url_name='start_booking',
+        permission_classes=[permissions.IsAuthenticated]
     )
     def start_booking(self, request, pk=None):
+        """
+        if event queue is active, add user to queue
+        else, allow booking.
+        """
         user = self.request.user
         event = self.get_object()
 
@@ -70,6 +75,10 @@ class EventViewSet(viewsets.ModelViewSet):
         permission_classes=[permissions.IsAuthenticated]
     )
     def booking(self, request, pk=None):
+        """
+        check and validate booking tokens if event queue is active.
+        there is used transaction.atomic() to avoid race condition.
+        """
         event = self.get_object()
         user = self.request.user
         if event.event_queue.is_active:
@@ -105,9 +114,14 @@ class EventViewSet(viewsets.ModelViewSet):
         detail=True,
         methods=['get'],
         url_path='queue',
-        url_name='queue'
+        url_name='queue',
+        permission_classes=[permissions.IsAuthenticated]
     )
     def queue(self, request, pk=None):
+        """
+        waiting room imitation, return users' position in queue.
+        if user is in allowed users return booking token.
+        """
         user = self.request.user
         event = self.get_object()
         queue_service = QueueService(event=event)
@@ -137,8 +151,12 @@ class TicketBatchViewSet(viewsets.ModelViewSet):
 class BookingViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin):
     queryset = Booking.objects.all().order_by('-id')
     serializer_class = BookingSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-    # permission_classes = [permissions.IsAuthenticated]
+    def get_queryset(self):
+        if self.request.user.is_staff:
+            return self.queryset
+        return self.queryset.filter(user=self.request.user)
 
     @action(
         detail=True,
