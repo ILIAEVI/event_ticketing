@@ -55,12 +55,11 @@ class EventViewSet(viewsets.ModelViewSet):
         """
         user = self.request.user
         event = self.get_object()
-        event_queue = event.event_queue
-        if event_queue and event_queue.is_active:
-            booking_token = BookingToken.objects.filter(user=user, event=event.event_queue).first()
+        if event.active_queue:
+            booking_token = BookingToken.objects.filter(user=user, event=event).first()
             if booking_token and booking_token.is_valid():
                 return Response({"message": "You are allowed to continue booking"}, status=status.HTTP_200_OK)
-            queue_service = QueueService(event=event)
+            queue_service = QueueService(event=event.id)
             if queue_service.add_to_queue(str(user.id)):
                 return Response({"message": "You have been added to the waiting room"}, status=status.HTTP_201_CREATED)
             return Response({"message": "You are already in the queue"}, status=status.HTTP_400_BAD_REQUEST)
@@ -82,9 +81,8 @@ class EventViewSet(viewsets.ModelViewSet):
         """
         event = self.get_object()
         user = self.request.user
-        event_queue = event.event_queue
-        if event_queue and event_queue.is_active:
-            queue_token = BookingToken.objects.filter(user=user, event=event.event_queue).first()
+        if event.active_queue:
+            queue_token = BookingToken.objects.filter(user=user, event=event).first()
             if not queue_token:
                 raise PermissionDenied("Queue Token is required to continue booking.")
             if not queue_token.is_valid():
@@ -126,17 +124,22 @@ class EventViewSet(viewsets.ModelViewSet):
         """
         user = self.request.user
         event = self.get_object()
-        queue_service = QueueService(event=event)
+        queue_service = QueueService(event=event.id)
         position = queue_service.get_user_position(str(user.id))
         allowed_users = queue_service.get_allowed_users()
 
         if str(user.id) in allowed_users:
-            booking_token = BookingToken.objects.get(user=user, event=event.event_queue).token
-            return Response(
-                {"message": "You are allowed to start the booking",
-                 "booking_token": booking_token},
-                status=status.HTTP_200_OK,
-            )
+            try:
+                booking_token = BookingToken.objects.get(user=user, event=event)
+            except BookingToken.DoesNotExist:
+                booking_token = None
+            if booking_token:
+                booking_token = booking_token.token
+                return Response(
+                    {"message": "You are allowed to start the booking",
+                     "booking_token": booking_token},
+                    status=status.HTTP_200_OK,
+                )
 
         return Response(
             {"message": "Your are in the queue", "position": position},

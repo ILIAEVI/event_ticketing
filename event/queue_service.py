@@ -9,9 +9,9 @@ class QueueService:
         """
         self.redis = redis.StrictRedis(host='localhost', port=6379, db=0)
         self.event = event
-        self.queue_key = f"event{self.event.id}:queue"
-        self.unique_set_key = f"event{self.event.id}:users"
-        self.allowed_users_set = f"event{self.event.id}:allowed_users"
+        self.queue_key = f"event{self.event}:queue"
+        self.unique_set_key = f"event{self.event}:users"
+        self.allowed_users_set = f"event{self.event}:allowed_users"
 
     def add_to_queue(self, user_id: str) -> bool:
         """
@@ -42,7 +42,7 @@ class QueueService:
         users = self.redis.lpop(self.queue_key, count=count)
         if users:
             self.redis.srem(self.unique_set_key, *users)
-            user_ids = [user.decode() for user in users]
+            user_ids = [int(user.decode()) for user in users]
 
             self.redis.sadd(self.allowed_users_set, *user_ids)
             return user_ids
@@ -69,3 +69,4 @@ class QueueService:
         """
         self.redis.delete(self.queue_key)
         self.redis.delete(self.unique_set_key)
+        self.redis.delete(self.allowed_users_set)

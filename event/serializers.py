@@ -17,8 +17,8 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = ['id', 'category', 'host', 'name', 'description', 'start_date', 'end_date', 'location', 'address',
-                  'max_attendance']
-        read_only_fields = ['host']
+                  'max_attendance', 'active_queue']
+        read_only_fields = ['host', 'active_queue']
 
     def validate(self, attrs):
         end_date = attrs['end_date']

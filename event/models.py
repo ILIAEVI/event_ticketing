@@ -29,9 +29,20 @@ class Event(models.Model):
     is_active = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    active_queue = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        """
+            At this development stage, only one EventQueue can be active at a time.
+            If the current EventQueue is being set as active, all others are deactivated.
+        """
+        if self.is_active:
+            Event.objects.filter(active_queue=True).update(active_queue=False)
+
+        super().save(*args, **kwargs)
 
 
 class TicketBatch(models.Model):
@@ -79,27 +90,9 @@ class Feedback(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
-class EventQueue(models.Model):
-    event = models.OneToOneField(Event, on_delete=models.CASCADE, related_name='event_queue')
-    is_active = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f"{self.event} Event Queue"
-
-    def save(self, *args, **kwargs):
-        """
-            At this development stage, only one EventQueue can be active at a time.
-            If the current EventQueue is being set as active, all others are deactivated.
-        """
-        if self.is_active:
-            EventQueue.objects.filter(is_active=True).update(is_active=False)
-
-        super().save(*args, **kwargs)
-
-
 class BookingToken(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='booking_tokens')
-    event = models.ForeignKey(EventQueue, on_delete=models.CASCADE, related_name='booking_tokens')
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='booking_tokens')
     token = models.CharField(max_length=255, default=generate_token, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
