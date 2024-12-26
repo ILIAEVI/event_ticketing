@@ -26,7 +26,7 @@ class ContactListOrderingBackend(BaseFilterBackend):
             phone_counts = queryset.values('phone_number').annotate(nc=Count('phone_number'))
             # subquery to fetch count of the phone number for each row.
             phone_number_count_sub_annotation = Subquery(
-                queryset=phone_counts.fiter(
+                queryset=phone_counts.filter(
                     phone_number=OuterRef('phone_number')
                 ).values('nc')[:1],
                 output_field=IntegerField()
