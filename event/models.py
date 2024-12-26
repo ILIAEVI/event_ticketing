@@ -46,6 +46,9 @@ class TicketBatch(models.Model):
     number_of_tickets = models.PositiveIntegerField(default=0)
     tickets_sold = models.PositiveIntegerField(default=0)
 
+    def __str__(self):
+        return f"{self.event.name} - {self.ticket_type}"
+
 
 class Booking(models.Model):
     class BookingStatusChoices(models.TextChoices):

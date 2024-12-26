@@ -22,7 +22,7 @@ class EventSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         end_date = attrs['end_date']
-        if end_date and end_date > attrs['start_date']:
+        if end_date and end_date <= attrs['start_date']:
             raise serializers.ValidationError("Start date must be before end date.")
         return attrs
 

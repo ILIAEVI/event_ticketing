@@ -55,9 +55,10 @@ class EventViewSet(viewsets.ModelViewSet):
         """
         user = self.request.user
         event = self.get_object()
-
-        if event.event_queue.is_active:
-            if BookingToken.objects.filter(user=user, event=event.event_queue).first().is_valid():
+        event_queue = event.event_queue
+        if event_queue and event_queue.is_active:
+            booking_token = BookingToken.objects.filter(user=user, event=event.event_queue).first()
+            if booking_token and booking_token.is_valid():
                 return Response({"message": "You are allowed to continue booking"}, status=status.HTTP_200_OK)
             queue_service = QueueService(event=event)
             if queue_service.add_to_queue(str(user.id)):
@@ -81,7 +82,8 @@ class EventViewSet(viewsets.ModelViewSet):
         """
         event = self.get_object()
         user = self.request.user
-        if event.event_queue.is_active:
+        event_queue = event.event_queue
+        if event_queue and event_queue.is_active:
             queue_token = BookingToken.objects.filter(user=user, event=event.event_queue).first()
             if not queue_token:
                 raise PermissionDenied("Queue Token is required to continue booking.")
