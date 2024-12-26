@@ -15,7 +15,7 @@ class ContactInfo(models.Model):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     email = models.EmailField()
-    phone = models.CharField(max_length=255, blank=True, null=True)
+    phone_number = models.CharField(max_length=255, blank=True, null=True)
     subject = models.CharField(
         max_length=255,
         choices=SubjectChoices.choices,

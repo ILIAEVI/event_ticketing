@@ -5,7 +5,7 @@ from contact.models import ContactInfo, SocialMedia
 class ContactInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactInfo
-        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'subject', 'message', 'created_at']
+        fields = ['id', 'first_name', 'last_name', 'email', 'phone_number', 'subject', 'message', 'created_at']
         read_only_fields = ['created_at']
 
 
