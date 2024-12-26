@@ -174,5 +174,4 @@ class BookingViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.Retr
     def get_qr_code(self, request, pk=None):
         booking = self.get_object()
         serializer = self.get_serializer(booking)
-        serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
