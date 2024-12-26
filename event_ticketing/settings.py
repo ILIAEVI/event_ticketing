@@ -210,7 +210,7 @@ CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_BEAT_SCHEDULE = {
     "process_event_queue": {
         "task": "event.tasks.process_event_queue",
-        "schedule": 20.0,
+        "schedule": 600.0,
     }
 }
 
